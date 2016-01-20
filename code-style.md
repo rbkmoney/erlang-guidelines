@@ -19,35 +19,33 @@
 
 ```erlang
 
--spec persist_suspend_key(Key :: binary(), TxID, Sequence) -> ok when
-    TxID :: processing_transaction:id(),
-    Sequence :: processing_transaction:sequence().
+-spec task_init(options()) -> {ok, tx_id(), Tx, Tx, timeout()} | {error, #error_info{}} when
+    Tx :: tx().
 
-persist_suspend_key(Key, TxID, Sequence) ->
-    ok = register_suspend_key(Key),
-    Record = #db_proxy_wakeup{
-        wakeup_key = Key,
-        tx_id = TxID,
-        transaction_log_seq = Sequence
-    },
-    processing_metric:db_do_write(
-        wakeup_key,
-        fun() ->
-            case gate_db_orm:get(db_proxy_wakeup, Key) of
+task_init(Args) ->
+    try
+        init_tx(Args)
+    catch Class:Reason ->
+        transform_error(Class, Reason, erlang:get_stacktrace())
+    end.
+
+init_tx({start, Initiator, Args}) ->
+    Static = static_manager:get_last_version(),
+    Handler = get_tx_handler(Initiator, Args),
+    Tx0 = prepare_tx(Handler:init_tx(Args, Static)),
+    Tx = processing_metric:db_do_write(
+        create_tx,
+        fun () ->
+            Tx1 = create_tx(approve(Tx0)),
+            case genlib_map:get(Initiator, genlib_map:get(contractors, Tx1)) of
                 undefined ->
-                    _ = gate_db_orm:create(db_proxy_wakeup, Record),
-                    ok;
-                #db_proxy_wakeup{tx_id = TxID} ->
-                    ok;
-                #db_proxy_wakeup{tx_id = AnotherTxID} ->
-                    processing_error:throw(
-                        proxy_contract_violated,
-                        <<"Wakeup key already bound">>,
-                        genlib:format("~s:~p", [Key, AnotherTxID])
-                    )
+                    Tx1;
+                Contractor ->
+                    update_tx(bind_contractor(Initiator, Contractor, Tx1), Tx1)
             end
         end
-    ).
+    ),
+    construct_task_init_result(Tx).
 
 ```
 
