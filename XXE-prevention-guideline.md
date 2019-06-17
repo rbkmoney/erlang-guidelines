@@ -80,7 +80,7 @@ main(_) ->
 Самый безопасный способ предотвратить XXE - полностью отключить DTD (внешние сущности)
 Если невозможно полностью отключить DTD, то внешние сущности и объявления типа внешнего документа должны быть отключены способом, специфичным для каждого анализатора.
 
-# xmerl
+# Безопасный пример для xmerl
 
 В стандартном парсере xmerl по умолчанию разрешены внешние сущности. Чтобы их запретить, необходимо использовать опции `{acc_fun, Fun}` и `{fetch_fun, Fun}`
 
@@ -132,6 +132,88 @@ main([Path]) ->
     end;
 main(_) ->
     halt(1).
+```
+
+# Безопасный пример для erlsom
+
+XML парсер [xmerl](https://github.com/willemdj/erlsom) возможно использовать в различных режимах. Для отключения внешних сущностей достаточно использовать его в режиме [SAX парсера](https://github.com/willemdj/erlsom#sax). 
+
+rebar.config:
+```
+{erl_opts, [no_debug_info]}.
+{deps, [
+    {erlsom, "1.5.0"}
+]}.
+
+{escript_incl_apps,
+ [parser]}.
+{escript_main_app, parser}.
+{escript_name, parser}.
+{escript_emu_args, "%%! +sbtu +A1\n"}.
+
+%% Profiles
+{profiles, [{test,
+             [{erl_opts, [debug_info]}
+            ]}]}.
+```
+
+parser.erl:
+```
+-module(parser).
+
+%% API exports
+-export([main/1]).
+
+%%====================================================================
+%% API functions
+%%====================================================================
+
+%% escript Entry point
+main([Path]) ->
+    io:format("Open file: ~p~n", [Path]),
+    Options = [{expand_entities, false}],
+    io:format("Parse xml with options: ~p~n", [Options]),
+    {ok, XmlBinary} = file:read_file(Path),
+    {ok, Result, []} = erlsom:parse_sax(XmlBinary, [], fun(Event, Acc) ->
+        % io:format("~p~n", [Event]),
+        [Event|Acc]
+    end, Options),
+    Xml = lists:reverse(Result),
+    {ok, Dir} = file:get_cwd(),
+    ok = file:write_file(Dir ++ "/xml.out", io_lib:format("~p", [Xml]), [append]),
+    erlang:halt(0).
+
+%%====================================================================
+%% Internal functions
+%%====================================================================
+```
+
+parser.app.src:
+```
+{application, parser,
+ [{description, "An escript"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib,
+    erlsom
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
+```
+
+To build:
+```
+$ rebar3 escriptize [{escript_incl_apps, [erlsom]}]
+```
+To run:
+```
+$ _build/default/bin/parser "path/to/xml/file"
 ```
 
 # References
