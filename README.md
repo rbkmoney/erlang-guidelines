@@ -32,6 +32,7 @@
 1. [Работа с системой контроля версий](working-with-vcs.md)
 1. [Подготовка релиза](preparing-release.md)
 1. [Версионирование](versioning.md)
+1. [Предотвращение XXE](XXE-prevention-guideline.md)
 
 [1]: https://erlang.org
 [2]: https://rebar3.org
