@@ -82,7 +82,7 @@ main(_) ->
 
 # Безопасный пример для xmerl
 
-В стандартном парсере xmerl по умолчанию разрешены внешние сущности. Чтобы их запретить, необходимо использовать опции `{acc_fun, Fun}` и `{fetch_fun, Fun}`
+В стандартном парсере xmerl по умолчанию разрешены внешние сущности. Чтобы их запретить, необходимо использовать опции `{acc_fun, Fun}` , `{fetch_fun, Fun}` и `{rules, FunRuleRead, FunRuleWrite, RulesState}`
 
 Пример безопасного парсера:
 ```
@@ -100,7 +100,6 @@ main([Path]) ->
         FunAcc = fun
             (ParsedEntity, Acc, GlobalState) ->
                 case xmerl_scan:user_state(GlobalState) of
-                    N when N > 5 -> throw(too_mach_items);      %% deny a big file
                     N ->
                         {[ParsedEntity | Acc], xmerl_scan:user_state(N+1, GlobalState)}
                 end
@@ -136,7 +135,7 @@ main(_) ->
 
 # Безопасный пример для erlsom
 
-XML парсер [xmerl](https://github.com/willemdj/erlsom) возможно использовать в различных режимах. Для отключения внешних сущностей достаточно использовать его в режиме [SAX парсера](https://github.com/willemdj/erlsom#sax). 
+XML парсер [erlsom](https://github.com/willemdj/erlsom) возможно использовать в различных режимах. Для отключения внешних сущностей достаточно использовать его в режиме [SAX парсера](https://github.com/willemdj/erlsom#sax). 
 
 rebar.config:
 ```
