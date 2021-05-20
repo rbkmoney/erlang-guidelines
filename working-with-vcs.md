@@ -2,6 +2,46 @@
 
 Рекомендации по работе с системой контроля версий в процессе написания нового функционала, подготовки релиза и правке багов.
 
+## Конфигурация
+
+Настоятельно рекомендуется настроить глобальный `gitignore`:
+
+    $ git config --global core.excludesFile '~/.gitignore'
+
+Для удобства можно воспользоваться сервисом [gitignore.io](https://gitignore.io)
+
+Пример минимального глобального `gitignore`:
+```gitignore
+## Tool: rebar3
+_checkouts/
+
+## Tool: EDTS
+.edts
+
+## Tool: *tags
+.tags*
+tags
+
+## Editors: temp files
+*~
+
+## Editor: Sublime
+*.sublime-workspace
+
+## Editor: Emacs
+\#*
+.\#*
+.projectile
+.dir-locals.el
+
+## Editor: IntelliJ IDEA
+out/
+.idea/
+
+## OS: macOS
+.DS_Store
+```
+
 ## Описание
 
 Подход напоминает сильно упрощённый [git flow](http://jeffkreeftmeijer.com/2010/why-arent-you-using-git-flow/) и почти полностью описывается следующей схемой:
